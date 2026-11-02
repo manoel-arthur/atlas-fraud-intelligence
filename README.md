@@ -58,29 +58,13 @@ flowchart TD
 
 **Nota técnica:** o GitHub Pages serve arquivos estáticos; Python e SQLite são executados no pipeline, não no navegador ou em um backend de produção.
 
-## Principais descobertas
+## Análise de negócio e resultados reproduzíveis
 
-Foram avaliados **15 limiares de risco**, de 20 a 90 pontos, com as seguintes premissas **ilustrativas**:
+A análise compara **15 limiares**, de 20 a 90 pontos, com premissas hipotéticas de **R$ 12 por alerta investigado** e **R$ 900 por fraude não detectada**.
 
-- **R$ 12** por alerta investigado, independentemente do resultado.
-- **R$ 900** por fraude simulada não detectada.
-- Custo total = (verdadeiros positivos + falsos positivos) × R$ 12 + falsos negativos × R$ 900.
+**Os resultados são recalculados automaticamente a cada geração de dados.** Consulte [`data/analise_custos.json`](data/analise_custos.json) para valores atuais, inclusive o limiar de menor custo. Não há garantia de que o limiar 45 continue sendo o melhor após a atualização do gerador.
 
-| Indicador | Limiar padrão: 60 | Menor custo simulado: 45 |
-|---|---:|---:|
-| Alertas para revisão | 161 | 448 |
-| Verdadeiros positivos | 21 | 28 |
-| Falsos positivos | 140 | 420 |
-| Falsos negativos | 8 | 1 |
-| Precisão | 13,04% | 6,25% |
-| Recall | 72,41% | 96,55% |
-| **Custo total hipotético** | **R$ 9.132** | **R$ 6.276** |
-
-**Resultado:** sob essas premissas, o limiar **45** reduz o custo simulado em **R$ 2.856 (31,3%)** em relação ao limiar 60. Porém, ele exige **287 investigações adicionais** e apresenta menor precisão.
-
-**Interpretação de negócio:** a alternativa de menor custo estimado não é necessariamente a mais viável operacionalmente. A recomendação depende da capacidade da equipe, do custo real dos erros, da qualidade dos rótulos e da validação com dados independentes.
-
-Os números completos são gerados automaticamente em [`data/analise_custos.json`](data/analise_custos.json) e documentados em [`ANALISE_CUSTO_OPERACIONAL.md`](ANALISE_CUSTO_OPERACIONAL.md).
+A interpretação exige considerar capacidade da equipe, custos reais, qualidade dos rótulos e validação externa. Os valores são apenas demonstrações.
 
 ## Como a qualidade dos dados é verificada
 
@@ -143,9 +127,9 @@ O notebook exploratório requer `pandas`, `matplotlib` e um ambiente Jupyter. El
 
 ## Metodologia e limitações
 
-- **Geração determinística:** os registros usam um gerador pseudoaleatório com semente fixa, permitindo reprodução dos dados.
+- **Geração determinística:** os registros usam semente fixa, perfis de clientes simulados, distribuição assimétrica de valores, sazonalidade e ruído para criar relações menos triviais. Não são amostras de uma população real.
 - **Score heurístico:** o risco é calculado a partir de sinais simulados, como dispositivo novo, velocidade transacional, horário atípico e localização incomum.
-- **Rótulos artificiais:** a variável de fraude é construída a partir de regras sintéticas; isso cria associações por construção e não comprova poder preditivo real.
+- **Rótulos artificiais:** a variável de fraude é gerada probabilisticamente a partir de fatores observados e latentes, separadamente do score. Ainda assim, as associações foram definidas pelo gerador e não comprovam poder preditivo real.
 - **Sem modelo treinado:** o projeto **não** utiliza machine learning supervisionado nem afirma desempenho em produção.
 - **Custos ilustrativos:** os valores não incluem custos de bloqueio indevido, recuperação de perdas, capacidade operacional ou efeitos sobre clientes.
 - **Sem validação externa:** resultados não são generalizáveis para transações reais.
