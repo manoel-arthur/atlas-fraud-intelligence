@@ -1,0 +1,54 @@
+name: Capture desktop dashboard screenshot
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/capture-dashboard.yml'
+permissions:
+  contents: write
+jobs:
+  screenshot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Chromium for screenshot
+        run: |
+          npm install --no-save playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Capture desktop viewport
+        run: |
+          python -m http.server 8000 --bind 127.0.0.1 &
+          node - <<'NODE'
+          const { chromium } = require('playwright');
+          (async () => {
+            const browser = await chromium.launch({ headless: true });
+            const page = await browser.newPage({
+              viewport: { width: 1440, height: 900 },
+              deviceScaleFactor: 1,
+              reducedMotion: 'reduce'
+            });
+            await page.goto('http://127.0.0.1:8000/', { waitUntil: 'networkidle' });
+            await page.waitForFunction(() => {
+              const el = document.querySelector('#costSummary');
+              return el && !el.textContent.includes('Carregando análise de custos');
+            }, { timeout: 20000 });
+            await page.screenshot({ path: 'atlas-dashboard-desktop.png', fullPage: true, animations: 'disabled' });
+            await browser.close();
+          })().catch(err => { console.error(err); process.exit(1); });
+          NODE
+      - name: Publish screenshot to repository
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add atlas-dashboard-desktop.png
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "Add full desktop screenshot for portfolio"
+          git fetch origin main
+          git rebase origin/main
+          git push origin HEAD:main
