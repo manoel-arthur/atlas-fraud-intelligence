@@ -5,6 +5,7 @@ on:
     paths:
       - 'scripts/build_data.py'
       - 'scripts/audit_data.py'
+      - 'scripts/analyze_costs.py'
       - '.github/workflows/build-data.yml'
   workflow_dispatch:
 permissions:
@@ -27,13 +28,15 @@ jobs:
         run: python scripts/build_data.py
       - name: Audit Python, SQL and dashboard metrics
         run: python scripts/audit_data.py
+      - name: Analyze operational costs and score thresholds
+        run: python scripts/analyze_costs.py
       - name: Commit and push data with safe retry
         shell: bash
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/transacoes.json data/transacoes.csv data/atlas.sqlite data/auditoria_metricas.json
+          git add data/transacoes.json data/transacoes.csv data/atlas.sqlite data/auditoria_metricas.json data/analise_custos.csv data/analise_custos.json ANALISE_CUSTO_OPERACIONAL.md
           if git diff --cached --quiet; then
             echo "No changes to generated data"
             exit 0
